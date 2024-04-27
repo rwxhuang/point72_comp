@@ -40,3 +40,6 @@ def get_bike_df(df):
     df_bike.to_csv('data/bike_net_change.csv')
 
     return df_bike
+
+def graph_station(df_bike, station):
+    df_bike[df_bike['station'] == station].plot(x='timestamp', y='num_net_bikes')
