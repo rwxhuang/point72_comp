@@ -26,7 +26,7 @@ def get_nyc_heatmap(df):
     fig = px.density_mapbox(df, lat='start_lat', lon='start_lng', z='riders', radius=8,
                             center=dict(lat=40.75651, lon=-73.98319), zoom=11,
                             mapbox_style="carto-positron")
-    fig.update_layout(width=425, height=600)
+    fig.update_layout(height=600)
     return fig
 
 def get_heatmap(csv_file, curr_timestamp):
@@ -87,7 +87,7 @@ col = st.columns((2.5, 4, 2), gap='large')
 with col[0]:
     st.write('### 🚲 Live Heatmap of People Using CitiBike')
     st.write('#### Time:', selected_date)
-    st.plotly_chart(get_nyc_heatmap(df))
+    st.plotly_chart(get_nyc_heatmap(df), use_container_width=True)
 with col[1]:
     with st.container():
         st.markdown("""
