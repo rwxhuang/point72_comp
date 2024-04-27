@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
 from streamlit_autorefresh import st_autorefresh
+from distance import estimate_co2_saved, estimate_delta_time
 
 # RUN APP COMMAND - python3 -m streamlit run MainPage.py
 st.set_page_config(
@@ -15,7 +16,7 @@ st.set_page_config(
 
 NUM_TO_MONTH = {1: 'January',2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 FEED_LENGTH = 30
-refresh_tick_count = st_autorefresh(interval=10000, limit=10)
+refresh_tick_count = st_autorefresh(interval=30000, limit=10)
 
 def get_nyc_heatmap(df):
     fig = px.density_mapbox(df, lat='start_lat', lon='start_lng', z='riders', radius=8,
@@ -48,15 +49,21 @@ def get_heatmap(csv_file, curr_timestamp):
     return df_heat
 
 def get_feed_data(df, n, curr_timestamp):
-    feed_df = df[df('ended_at') <= curr_timestamp]
+    feed_df = df[df['ended_at'] <= curr_timestamp]
     feed_df = feed_df.sort_values(by='ended_at').tail(n)
 
     return feed_df
+selected_date = datetime(2024, 3, 5, 9, 1, 0) + timedelta(hours=refresh_tick_count)
+df = get_heatmap('./data/202403-citibike-tripdata_1.csv', selected_date)
 
-# def download_and_process_data(csv_file):
-#     df = pd.read_csv(csv_file, delimiter=',')
-
-    return df_heat
+#Get the feed information
+feed_df = get_feed_data(df, FEED_LENGTH, selected_date)
+amt_of_CO2_saved = []
+bike_car_commute_times = []
+for i, row in feed_df.iterrows():
+    ori_lat, ori_lng, dest_lat, dest_lng = row['start_lat'], row['start_lng'], row['end_lat'], row['end_lng']
+    amt_of_CO2_saved.append(estimate_co2_saved(ori_lat, ori_lng, dest_lat, dest_lng))
+    bike_car_commute_times.append(estimate_delta_time(ori_lat, ori_lng, dest_lat, dest_lng))
 
 # UI BELOW
 
@@ -64,26 +71,22 @@ def get_feed_data(df, n, curr_timestamp):
 col = st.columns((2.5, 4, 2), gap='large')
 with col[0]:
     st.write('### 🚲 Live Heatmap of People Using CitiBike')
-    selected_date = datetime(2024, 3, 5, 9, 1, 0) + timedelta(hours=refresh_tick_count)
     st.write('#### Time:', selected_date)
-    df = get_heatmap('./data/202403-citibike-tripdata_1.csv', selected_date)
     st.plotly_chart(get_nyc_heatmap(df))
 with col[1]:
     with st.container():
         st.markdown("""
-                    # NYC Amount of CO2 Saved
+                    # NYC Amount of CO₂ Saved
                     """)
         st.progress(40, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
-        st.write("🍃 Total Amount of CO2 saved: " + " kilograms")
-        st.write("🎯 Goal Amount of CO2 to save: " + " kilograms")
+        st.write("🍃 Total Amount of CO₂ saved: " + " kilograms")
+        st.write("🎯 Goal Amount of CO₂ to save: " + " kilograms")
     st.write("## 🏢 Live Feed of Manhattan CitiBikers")
     with st.container(height=420, border=True):
-        for i in range(6):
+        for i in range(FEED_LENGTH):
             with st.container(border=True):
-                st.markdown("""
-                            👤 *Anonymous* just rode for **15 minutes**, saving :green[**60 gallons of CO2**]:
-                            """)
-                st.markdown('<div style="text-align: right;">+🍃: 60 kg of CO2, saved 5 min compared to car</div>', unsafe_allow_html=True)
+                st.markdown("👤 *Anonymous* just rode for " + str(bike_car_commute_times[i]['bike']) + " minutes, saving :green[**" + str(round(amt_of_CO2_saved[i], 3)) + " kg of CO₂**]:")
+                st.markdown('<div style="text-align: right;">+🍃: ' + str(round(amt_of_CO2_saved[i], 3)) + ' kg of CO₂, saved ' + str(bike_car_commute_times[i]['drive'] - bike_car_commute_times[i]['bike']) + ' min compared to car</div>', unsafe_allow_html=True)
 with col[2]:
     with st.container():
         st.write('''
