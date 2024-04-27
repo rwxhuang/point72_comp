@@ -16,6 +16,7 @@ st.set_page_config(
 
 NUM_TO_MONTH = {1: 'January',2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 FEED_LENGTH = 30
+GOAL_CO2 = 1260783
 refresh_tick_count = st_autorefresh(interval=30000, limit=10)
 
 def get_nyc_heatmap(df):
@@ -56,7 +57,12 @@ def get_feed_data(df, n, curr_timestamp):
 selected_date = datetime(2024, 3, 5, 9, 1, 0) + timedelta(hours=refresh_tick_count)
 df = get_heatmap('./data/202403-citibike-tripdata_1.csv', selected_date)
 
-#Get the feed information
+#Estimate the amount of CO2 currently emitted this month
+total_seconds = 31 * 24 * 60 * 60
+current_timestamp = (selected_date - datetime(selected_date.year, selected_date.month, 1)).total_seconds()
+percentage = current_timestamp / total_seconds
+
+# Get the feed information
 feed_df = get_feed_data(df, FEED_LENGTH, selected_date)
 amt_of_CO2_saved = []
 bike_car_commute_times = []
@@ -64,6 +70,9 @@ for i, row in feed_df.iterrows():
     ori_lat, ori_lng, dest_lat, dest_lng = row['start_lat'], row['start_lng'], row['end_lat'], row['end_lng']
     amt_of_CO2_saved.append(estimate_co2_saved(ori_lat, ori_lng, dest_lat, dest_lng))
     bike_car_commute_times.append(estimate_delta_time(ori_lat, ori_lng, dest_lat, dest_lng))
+
+# Get estimate of CO2 saved
+
 
 # UI BELOW
 
@@ -78,9 +87,9 @@ with col[1]:
         st.markdown("""
                     # NYC Amount of CO₂ Saved
                     """)
-        st.progress(40, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
-        st.write("🍃 Total Amount of CO₂ saved: " + " kilograms")
-        st.write("🎯 Goal Amount of CO₂ to save: " + " kilograms")
+        st.progress(percentage, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
+        st.write("🍃 Total Amount of CO₂ saved: " + str(round(percentage * GOAL_CO2, 1)) + " kilograms (" + str(round(percentage * 100, 1)) + "% of the way there!)")
+        st.write("🎯 Goal Amount of CO₂ to save: *" + str(GOAL_CO2) + "* kilograms")
     st.write("## 🏢 Live Feed of Manhattan CitiBikers")
     with st.container(height=420, border=True):
         for i in range(FEED_LENGTH):
