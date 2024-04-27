@@ -85,10 +85,13 @@ with col[1]:
                     # NYC Amount of CO₂ Saved
                     """)
         st.progress(percentage, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
-        st.write("🍃 Total Amount of CO₂ saved: " + str(round(percentage * GOAL_CO2, 1)) + " kilograms (" + str(round(percentage * 100, 1)) + "% of the way there!)")
-        st.write("🎯 Goal Amount of CO₂ to save: *" + str(GOAL_CO2) + "* kilograms")
+        st.write("🍃 Total Amount of CO₂ saved: *" + str(round(percentage * GOAL_CO2, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
+        st.write("🎯 Goal Amount of CO₂ to save this month: *" + str(GOAL_CO2) + "* kilograms")
     st.write("## 🏢 Live Feed of Manhattan CitiBikers")
     with st.container(height=420, border=True):
+        # REPLACE WITH CSP DATA
+        with st.container(border=True):
+                st.markdown("🌆 The city of Manhattan just saved **" + str(round(amt_of_CO2_saved[0], 3)) + " kg of CO₂** in the past 30 seconds!")
         for i in range(FEED_LENGTH):
             with st.container(border=True):
                 st.markdown("👤 *Anonymous* just rode for " + str(bike_car_commute_times[i]['bike']) + " minutes, saving :green[**" + str(round(amt_of_CO2_saved[i], 3)) + " kg of CO₂**]:")
