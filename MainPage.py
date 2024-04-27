@@ -5,6 +5,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 from streamlit_autorefresh import st_autorefresh
 from distance import estimate_co2_saved, estimate_delta_time
+from dateutil.relativedelta import relativedelta
 import csp
 import poll
 
@@ -19,7 +20,7 @@ st.set_page_config(
 NUM_TO_MONTH = {1: 'January',2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 FEED_LENGTH = 30
 GOAL_CO2 = 1260783
-START_CO2 = 178171.3
+START_CO2 = 978171.3
 refresh_tick_count = st_autorefresh(interval=30000, limit=100)
 
 def get_nyc_heatmap(df):
@@ -57,7 +58,7 @@ def get_feed_data(df, n, curr_timestamp):
     feed_df = feed_df.sort_values(by='ended_at').tail(n)
 
     return feed_df
-selected_date = datetime(2024, 3, 5, 9, 8, 26) + timedelta(hours=refresh_tick_count)
+selected_date = datetime(2024, 3, 27, 9, 8, 26) + timedelta(hours=refresh_tick_count)
 df = get_heatmap('./data/202403-citibike-tripdata_1.csv', selected_date)
 
 #Estimate the amount of CO2 currently emitted this month
@@ -86,14 +87,14 @@ with open('./co2_saved.txt', 'r') as file:
 col = st.columns((2.5, 4, 2), gap='large')
 with col[0]:
     st.write('### 🚲 Live Heatmap of People Using CitiBike')
-    st.write('#### Time:', selected_date)
+    st.write('#### Time:', selected_date + relativedelta(months=1))
     st.plotly_chart(get_nyc_heatmap(df), use_container_width=True)
 with col[1]:
     with st.container():
         st.markdown("""
                     # NYC Amount of CO₂ Saved
                     """)
-        st.progress(percentage, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
+        st.progress(percentage, text="For the Month of April 2024")
         st.write("🍃 Total Amount of CO₂ saved: *" + str(round(START_CO2 + co2_saved_total_live, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
         st.write("🎯 Goal Amount of CO₂ to save this month: *" + str(GOAL_CO2) + "* kilograms")
     st.write("## 🏢 Live Feed of Manhattan CitiBikers")
