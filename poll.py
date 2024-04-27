@@ -119,6 +119,9 @@ def approximate_trips(stations: ts[[dict]]) -> ts[float]:
             s_co2_saved = 0
 
         print("bike pool: ", sum([bike[4] for bike in s_bike_pool]))
+
+        with open("co2_saved.txt", "w") as f:
+            f.write(str(s_co2_saved))
     
         # finally, "tick" out the result
         return s_co2_saved
