@@ -17,6 +17,7 @@ st.set_page_config(
 NUM_TO_MONTH = {1: 'January',2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 FEED_LENGTH = 30
 GOAL_CO2 = 1260783
+START_CO2 = 178171.3
 refresh_tick_count = st_autorefresh(interval=30000, limit=100)
 
 def get_nyc_heatmap(df):
@@ -71,6 +72,11 @@ for i, row in feed_df.iterrows():
     amt_of_CO2_saved.append(estimate_co2_saved(ori_lat, ori_lng, dest_lat, dest_lng))
     bike_car_commute_times.append(estimate_delta_time(ori_lat, ori_lng, dest_lat, dest_lng))
 
+#Get live csp data from txt file
+with open('./co2_saved.txt', 'r') as file:
+    # Read the first line of the file into a string
+    co2_saved_total_live = file.readline()
+
 # UI BELOW
 
 ## Dashboard Design
@@ -85,13 +91,16 @@ with col[1]:
                     # NYC Amount of CO₂ Saved
                     """)
         st.progress(percentage, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
-        st.write("🍃 Total Amount of CO₂ saved: *" + str(round(percentage * GOAL_CO2, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
+        st.write("🍃 Total Amount of CO₂ saved: *" + str(round(START_CO2 + 1, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
         st.write("🎯 Goal Amount of CO₂ to save this month: *" + str(GOAL_CO2) + "* kilograms")
     st.write("## 🏢 Live Feed of Manhattan CitiBikers")
     with st.container(height=420, border=True):
         # REPLACE WITH CSP DATA
-        with st.container(border=True):
-                st.markdown("🌆 The city of Manhattan just saved **" + str(round(amt_of_CO2_saved[0], 3)) + " kg of CO₂** in the past 30 seconds!")
+        if float(co2_saved_total_live) != 0.0:
+            with st.container(border=True):
+                    co2_num = round(float(co2_saved_total_live), 3)
+                    st.markdown("🌆 The city of Manhattan just saved :green[**" + str(co2_num) + " kg of CO₂**] in the past 30 seconds!")
+                    st.markdown('<div style="text-align: right;">+🍃: ' + str(co2_num) + ' kg of CO₂', unsafe_allow_html=True)
         for i in range(FEED_LENGTH):
             with st.container(border=True):
                 st.markdown("👤 *Anonymous* just rode for " + str(bike_car_commute_times[i]['bike']) + " minutes, saving :green[**" + str(round(amt_of_CO2_saved[i], 3)) + " kg of CO₂**]:")
