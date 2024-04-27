@@ -71,6 +71,7 @@ def approximate_trips(stations: ts[[dict]]) -> ts[float]:
     if csp.ticked(stations):
         # when a new list of stations "ticks", we'll do some
         # processing and emit a new "tick" as output
+        prev_co2_saved = s_co2_saved
 
         for station in stations:
             # subtract prior capacity
@@ -121,7 +122,7 @@ def approximate_trips(stations: ts[[dict]]) -> ts[float]:
         print("bike pool: ", sum([bike[4] for bike in s_bike_pool]))
 
         with open("co2_saved.txt", "w") as f:
-            f.write(str(s_co2_saved))
+            f.write(str(s_co2_saved - prev_co2_saved) + '\n' + str(s_co2_saved))
     
         # finally, "tick" out the result
         return s_co2_saved
@@ -134,6 +135,6 @@ def my_capacity_calculator(interval: timedelta):
     co2_saved = approximate_trips(stations_data)
     csp.print("Total CO2 saved", co2_saved)
 
-csp.run(my_capacity_calculator, timedelta(seconds=15), realtime=True)
+csp.run(my_capacity_calculator, timedelta(seconds=28), realtime=True)
 
         
