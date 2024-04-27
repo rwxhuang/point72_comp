@@ -75,7 +75,8 @@ for i, row in feed_df.iterrows():
 #Get live csp data from txt file
 with open('./co2_saved.txt', 'r') as file:
     # Read the first line of the file into a string
-    co2_saved_total_live = file.readline()
+    co2_30_sec_total = float(file.readline())
+    co2_saved_total_live = float(file.readline())
 
 # UI BELOW
 
@@ -91,16 +92,16 @@ with col[1]:
                     # NYC Amount of CO₂ Saved
                     """)
         st.progress(percentage, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
-        st.write("🍃 Total Amount of CO₂ saved: *" + str(round(START_CO2 + 1, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
+        st.write("🍃 Total Amount of CO₂ saved: *" + str(round(START_CO2 + co2_saved_total_live, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
         st.write("🎯 Goal Amount of CO₂ to save this month: *" + str(GOAL_CO2) + "* kilograms")
     st.write("## 🏢 Live Feed of Manhattan CitiBikers")
     with st.container(height=420, border=True):
         # REPLACE WITH CSP DATA
-        if float(co2_saved_total_live) != 0.0:
+        if float(co2_30_sec_total) != 0.0:
             with st.container(border=True):
                     co2_num = round(float(co2_saved_total_live), 3)
-                    st.markdown("🌆 The city of Manhattan just saved :green[**" + str(co2_num) + " kg of CO₂**] in the past 30 seconds!")
-                    st.markdown('<div style="text-align: right;">+🍃: ' + str(co2_num) + ' kg of CO₂', unsafe_allow_html=True)
+                    st.markdown("🌆 The city of Manhattan just saved :green[**" + str(co2_30_sec_total) + " kg of CO₂**] in the past 30 seconds!")
+                    st.markdown('<div style="text-align: right;">+🍃: ' + str(co2_30_sec_total) + ' kg of CO₂', unsafe_allow_html=True)
         for i in range(FEED_LENGTH):
             with st.container(border=True):
                 st.markdown("👤 *Anonymous* just rode for " + str(bike_car_commute_times[i]['bike']) + " minutes, saving :green[**" + str(round(amt_of_CO2_saved[i], 3)) + " kg of CO₂**]:")
