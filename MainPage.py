@@ -3,68 +3,10 @@ import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
+from streamlit_autorefresh import st_autorefresh
+from distance import estimate_co2_saved, estimate_delta_time
 
 # RUN APP COMMAND - python3 -m streamlit run MainPage.py
-TRANSPORTATIONS = ['CitiBikes', 'MTA']
-
-def get_df():
-    df = pd.read_csv('./data/202403-citibike-tripdata_1.csv')
-    df = df[['started_at', 'ended_at', 'start_station_id', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng']]
-
-    df['started_at'] = pd.to_datetime(df['started_at']).dt.round('H')
-    df['ended_at'] = pd.to_datetime(df['ended_at']).dt.round('H')
-
-    df['start_station_id'] = df['start_station_id'].astype(str)
-    df['end_station_id'] = df['end_station_id'].astype(str)
-
-    df = df[(df['start_station_id'] != 'nan') & (df['end_station_id'] != 'nan')]
-
-    df = df.dropna()
-    return df
-
-def get_nyc_heatmap(df, selected_date):
-    df = df[(df['started_at'] >= selected_date) & (df['ended_at'] >= selected_date)]
-    station_counts = df.groupby('start_station_id').size()
-    df = df.drop_duplicates(subset='start_station_id')
-    df['freq'] = station_counts.values
-    fig = px.density_mapbox(df, lat='start_lat', lon='start_lng', z='freq', radius=8,
-                            center=dict(lat=40.757, lon=-73.92319), zoom=9,
-                            mapbox_style="open-street-map")
-    fig.update_layout(width=425, height=600)
-    return fig
-
-def get_feed_data(df, n, curr_timestamp):
-    feed_df = df[df('ended_at') <= curr_timestamp]
-    feed_df = feed_df.sort_values(by='ended_at').tail(n)
-
-    return feed_df
-
-# def download_and_process_data(csv_file):
-#     df = pd.read_csv(csv_file, delimiter=',')
-
-#     df = df[['started_at', 'ended_at', 'start_station_id', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng']]
-
-#     df['started_at'] = pd.to_datetime(df['started_at']).dt.round('H')
-#     df['ended_at'] = pd.to_datetime(df['ended_at']).dt.round('H')
-
-#     df['start_station_id'] = df['start_station_id'].astype(str)
-#     df['end_station_id'] = df['end_station_id'].astype(str)
-
-#     df = df[(df['start_station_id'] != 'nan') & (df['end_station_id'] != 'nan')]
-
-#     df = df.dropna()
-
-#     return df
-
-def groupby_time_location_processing(df):
-    df_start = df.groupby(['start_station_id', 'started_at']).first().reset_index('start_station_id').reset_index('started_at')
-    df_start_size = df.groupby(['start_station_id', 'started_at']).size().reset_index('start_station_id').reset_index('started_at')
-
-    df_start['size'] = df_start_size[0]
-
-    return df_start
-
-# UI BELOW
 st.set_page_config(
     page_title="Point 72 Competition App",
     page_icon="🚲",
@@ -72,36 +14,85 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+NUM_TO_MONTH = {1: 'January',2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
+FEED_LENGTH = 30
+GOAL_CO2 = 1260783
+refresh_tick_count = st_autorefresh(interval=30000, limit=100)
+
+def get_nyc_heatmap(df):
+    fig = px.density_mapbox(df, lat='start_lat', lon='start_lng', z='riders', radius=8,
+                            center=dict(lat=40.75651, lon=-73.98319), zoom=11,
+                            mapbox_style="carto-positron")
+    fig.update_layout(width=425, height=600)
+    return fig
+
+def get_heatmap(csv_file, curr_timestamp):
+    df = pd.read_csv(csv_file, delimiter=',')
+
+    df = df[['started_at', 'ended_at', 'start_station_id', 'end_station_id', 'start_lat', 'start_lng', 'end_lat', 'end_lng']]
+
+    df['started_at'] = pd.to_datetime(df['started_at']) #dt.round('H')
+    df['ended_at'] = pd.to_datetime(df['ended_at']) #dt.round('H')
+
+    df['start_station_id'] = df['start_station_id'].astype(str)
+    df['end_station_id'] = df['end_station_id'].astype(str)
+
+    df = df[(df['start_station_id'] != 'nan') & (df['end_station_id'] != 'nan')]
+
+    df = df.dropna()
+
+    cutoff_timestamp = curr_timestamp - timedelta(hours=1)
+    df = df[(df['started_at'] >= cutoff_timestamp) & (df['started_at'] <= curr_timestamp)]
+
+    df_heat = df.groupby(['start_station_id']).first().reset_index('start_station_id')
+    df_heat['riders'] = df.groupby(['start_station_id']).size().reset_index('start_station_id')[0]
+
+    return df_heat
+
+def get_feed_data(df, n, curr_timestamp):
+    feed_df = df[df['ended_at'] <= curr_timestamp]
+    feed_df = feed_df.sort_values(by='ended_at').tail(n)
+
+    return feed_df
+selected_date = datetime(2024, 3, 5, 9, 8, 26) + timedelta(hours=refresh_tick_count)
+df = get_heatmap('./data/202403-citibike-tripdata_1.csv', selected_date)
+
+#Estimate the amount of CO2 currently emitted this month
+total_seconds = 31 * 24 * 60 * 60
+current_timestamp = (selected_date - datetime(selected_date.year, selected_date.month, 1)).total_seconds()
+percentage = current_timestamp / total_seconds
+
+# Get the feed information
+feed_df = get_feed_data(df, FEED_LENGTH, selected_date)
+amt_of_CO2_saved = []
+bike_car_commute_times = []
+for i, row in feed_df.iterrows():
+    ori_lat, ori_lng, dest_lat, dest_lng = row['start_lat'], row['start_lng'], row['end_lat'], row['end_lng']
+    amt_of_CO2_saved.append(estimate_co2_saved(ori_lat, ori_lng, dest_lat, dest_lng))
+    bike_car_commute_times.append(estimate_delta_time(ori_lat, ori_lng, dest_lat, dest_lng))
+
+# UI BELOW
+
 ## Dashboard Design
 col = st.columns((2.5, 4, 2), gap='large')
 with col[0]:
-    st.header('🚲 Live Heatmap of People Using CitiBike')
-    df = get_df()
-    start_date = df['started_at'].min().to_pydatetime()
-    end_date = df['ended_at'].max().to_pydatetime()
-    selected_date = st.slider(
-        "Select a date range",
-        min_value=start_date,
-        max_value=end_date,
-        value=start_date,
-        step=timedelta(minutes=1),
-    )
-    st.plotly_chart(get_nyc_heatmap(df, selected_date))
+    st.write('### 🚲 Live Heatmap of People Using CitiBike')
+    st.write('#### Time:', selected_date)
+    st.plotly_chart(get_nyc_heatmap(df))
 with col[1]:
     with st.container():
         st.markdown("""
-                    # NYC Amount of CO2 Saved
+                    # NYC Amount of CO₂ Saved
                     """)
-        st.progress(40, text="For the Month of March 2024")
-        st.write("🍃 Total Amount of CO2 saved: 56,000,000 kilograms")
-    with st.container(border=True):
-        st.write("## 🏢 Live Feed of Manhattan CitiBikers")
-        for i in range(6):
+        st.progress(percentage, text="For the Month of " + NUM_TO_MONTH[selected_date.month] +  " 2024")
+        st.write("🍃 Total Amount of CO₂ saved: " + str(round(percentage * GOAL_CO2, 1)) + " kilograms (" + str(round(percentage * 100, 1)) + "% of the way there!)")
+        st.write("🎯 Goal Amount of CO₂ to save: *" + str(GOAL_CO2) + "* kilograms")
+    st.write("## 🏢 Live Feed of Manhattan CitiBikers")
+    with st.container(height=420, border=True):
+        for i in range(FEED_LENGTH):
             with st.container(border=True):
-                st.markdown("""
-                            👤 Anonymous just rode for **15 minutes**, saving :green[**60 gallons of CO2**]:
-                            """)
-                st.markdown('<div style="text-align: right;">+🍃: 60 kg of CO2</div>', unsafe_allow_html=True)
+                st.markdown("👤 *Anonymous* just rode for " + str(bike_car_commute_times[i]['bike']) + " minutes, saving :green[**" + str(round(amt_of_CO2_saved[i], 3)) + " kg of CO₂**]:")
+                st.markdown('<div style="text-align: right;">+🍃: ' + str(round(amt_of_CO2_saved[i], 3)) + ' kg of CO₂, saved ' + str(bike_car_commute_times[i]['drive'] - bike_car_commute_times[i]['bike']) + ' min compared to car</div>', unsafe_allow_html=True)
 with col[2]:
     with st.container():
         st.write('''
@@ -109,7 +100,18 @@ with col[2]:
         Track live the usage of CitiBikes as the community of NYC attempts to reduce CO2 emissions together.
         - :orange[**Implementers**]: Roderick Huang, Shepard Jiang, Arnold Su
         - :orange[**Dataset**]: Live feed from [CitiBike System Data](https://citibikenyc.com/system-data)
+        - :orange[**Calculations**]: [Google Maps Platform](https://developers.google.com/maps)
         ''')
-    with st.container(border=True):
-        st.write("## 🧍 What is your contribution?")
+    with st.container(height=410, border=True):
+        st.write("### 🧍 Your contribution")
+        st.write("""
+                **This month, you've saved...**
+                - 🍃 CO2: 7.12 kg
+                - 🕒 Time saved: 16 minutes
+                 
+                **All time, you've saved...**
+                - 🍃 CO2: 53.4 kg
+                - 🕒 Time saved: 109 minutes
+                 """)
+        st.write("You are in the :red[**95th percentile**]: of CitiBike users for being environmently friendly this month!")
 
