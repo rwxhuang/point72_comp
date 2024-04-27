@@ -33,6 +33,12 @@ def get_nyc_heatmap(df, selected_date):
     fig.update_layout(width=425, height=600)
     return fig
 
+def get_feed_data(df, n, curr_time):
+    feed_df = df[df('started_at') <= curr_time]
+    feed_df = feed_df.sort_values(by='ended_at').tail(n)
+
+    return feed_df
+
 # def download_and_process_data(csv_file):
 #     df = pd.read_csv(csv_file, delimiter=',')
 
