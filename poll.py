@@ -135,6 +135,7 @@ def my_capacity_calculator(interval: timedelta):
     co2_saved = approximate_trips(stations_data)
     csp.print("Total CO2 saved", co2_saved)
 
-csp.run(my_capacity_calculator, timedelta(seconds=28), realtime=True)
+if __name__ == "__main__":
+    csp.run(my_capacity_calculator, timedelta(seconds=28), realtime=True)
 
         
