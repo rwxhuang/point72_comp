@@ -87,7 +87,7 @@ with open('./co2_saved.txt', 'r') as file:
 col = st.columns((2.5, 4, 2), gap='large')
 with col[0]:
     st.write('### 🚲 Live Heatmap of People Using CitiBike')
-    st.write('#### Time:', selected_date + relativedelta(months=1))
+    st.write('#### Time:', datetime.now())
     st.plotly_chart(get_nyc_heatmap(df), use_container_width=True)
 with col[1]:
     with st.container():
