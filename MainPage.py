@@ -17,7 +17,7 @@ st.set_page_config(
 NUM_TO_MONTH = {1: 'January',2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 FEED_LENGTH = 30
 GOAL_CO2 = 1260783
-refresh_tick_count = st_autorefresh(interval=30000, limit=10)
+refresh_tick_count = st_autorefresh(interval=30000, limit=100)
 
 def get_nyc_heatmap(df):
     fig = px.density_mapbox(df, lat='start_lat', lon='start_lng', z='riders', radius=8,
@@ -54,7 +54,7 @@ def get_feed_data(df, n, curr_timestamp):
     feed_df = feed_df.sort_values(by='ended_at').tail(n)
 
     return feed_df
-selected_date = datetime(2024, 3, 5, 9, 1, 0) + timedelta(hours=refresh_tick_count)
+selected_date = datetime(2024, 3, 5, 9, 8, 26) + timedelta(hours=refresh_tick_count)
 df = get_heatmap('./data/202403-citibike-tripdata_1.csv', selected_date)
 
 #Estimate the amount of CO2 currently emitted this month
@@ -70,9 +70,6 @@ for i, row in feed_df.iterrows():
     ori_lat, ori_lng, dest_lat, dest_lng = row['start_lat'], row['start_lng'], row['end_lat'], row['end_lng']
     amt_of_CO2_saved.append(estimate_co2_saved(ori_lat, ori_lng, dest_lat, dest_lng))
     bike_car_commute_times.append(estimate_delta_time(ori_lat, ori_lng, dest_lat, dest_lng))
-
-# Get estimate of CO2 saved
-
 
 # UI BELOW
 
@@ -109,12 +106,12 @@ with col[2]:
         st.write("### 🧍 Your contribution")
         st.write("""
                 **This month, you've saved...**
-                - 🍃 CO2: 5000 kg
-                - 🕒 Time saved: 15 minutes
+                - 🍃 CO2: 7.12 kg
+                - 🕒 Time saved: 16 minutes
                  
                 **All time, you've saved...**
-                - 🍃 CO2: 5000 kg
-                - 🕒 Time saved: 15 minutes
+                - 🍃 CO2: 53.4 kg
+                - 🕒 Time saved: 109 minutes
                  """)
-        st.write("You are in the :red[**95th percentile**]: of CitiBike users for being environmently friendly!")
+        st.write("You are in the :red[**95th percentile**]: of CitiBike users for being environmently friendly this month!")
 
