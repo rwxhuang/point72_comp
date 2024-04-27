@@ -39,8 +39,13 @@ def get_heatmap(csv_file, curr_timestamp):
 
     df = df.dropna()
 
-    cutoff_timestamp = curr_timestamp - timedelta(hours=3)
+    cutoff_timestamp = curr_timestamp - timedelta(hours=1)
     df = df[(df['started_at'] >= cutoff_timestamp) & (df['started_at'] <= curr_timestamp)]
+
+    df_heat = df.groupby(['start_station_id']).first().reset_index('start_station_id')
+    df_heat['riders'] = df.groupby(['start_station_id']).size().reset_index('start_station_id')[0]
+
+    return df_heat
 
 def get_feed_data(df, n, curr_timestamp):
     feed_df = df[df('ended_at') <= curr_timestamp]
