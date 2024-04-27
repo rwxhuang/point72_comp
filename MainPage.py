@@ -100,8 +100,8 @@ with col[1]:
         if float(co2_30_sec_total) != 0.0:
             with st.container(border=True):
                     co2_num = round(float(co2_saved_total_live), 3)
-                    st.markdown("🌆 The city of Manhattan just saved :green[**" + str(co2_30_sec_total) + " kg of CO₂**] in the past 30 seconds!")
-                    st.markdown('<div style="text-align: right;">+🍃: ' + str(co2_30_sec_total) + ' kg of CO₂', unsafe_allow_html=True)
+                    st.markdown("🌆 The city of Manhattan just saved :green[**" + str(round(co2_30_sec_total, 2)) + " kg of CO₂**] in the past 30 seconds!")
+                    st.markdown('<div style="text-align: right;">+🍃: ' + str(round(co2_30_sec_total, 2)) + ' kg of CO₂', unsafe_allow_html=True)
         for i in range(FEED_LENGTH):
             with st.container(border=True):
                 st.markdown("👤 *Anonymous* just rode for " + str(bike_car_commute_times[i]['bike']) + " minutes, saving :green[**" + str(round(amt_of_CO2_saved[i], 3)) + " kg of CO₂**]:")
