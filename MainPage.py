@@ -97,13 +97,13 @@ with col[1]:
         st.progress(percentage, text="For the Month of April 2024")
         st.write("🍃 Total Amount of CO₂ saved: *" + str(round(START_CO2 + co2_saved_total_live, 1)) + "* kilograms (**" + str(round(percentage * 100, 1)) + "%** of the way there!)")
         st.write("🎯 Goal Amount of CO₂ to save this month: *" + str(GOAL_CO2) + "* kilograms")
-    st.write("## 🏢 Live Feed of Manhattan CitiBikers")
+    st.write("## 🏢 Live Feed of New York CitiBikers")
     with st.container(height=420, border=True):
         # REPLACE WITH CSP DATA
         if float(co2_30_sec_total) != 0.0:
             with st.container(border=True):
                     co2_num = round(float(co2_saved_total_live), 3)
-                    st.markdown("🌆 The city of Manhattan just saved :green[**" + str(round(co2_30_sec_total, 2)) + " kg of CO₂**] in the past 30 seconds!")
+                    st.markdown("🌆 The city of New York just saved :green[**" + str(round(co2_30_sec_total, 2)) + " kg of CO₂**] in the past 30 seconds!")
                     st.markdown('<div style="text-align: right;">+🍃: ' + str(round(co2_30_sec_total, 2)) + ' kg of CO₂', unsafe_allow_html=True)
         for i in range(FEED_LENGTH):
             with st.container(border=True):
